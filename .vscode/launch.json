@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "name": "Flutter (lib\\screenAdmin\\listeADD\\ListCours.dart)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib\\screenAdmin\\listeADD\\ListCours.dart"
+        }
+    ]
+}
