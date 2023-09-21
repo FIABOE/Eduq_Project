@@ -46,33 +46,22 @@ class _FilierePageState extends State<FilierePage> {
   }
 
   Future<void> _saveFiliere() async {
-  if (selectedFiliere != null) {
-    final url = Uri.parse('http://127.0.0.1:8000/api/choisir-filiere');
-    final headers = {
-      'Accept': 'application/json',
-      'Authorization': 'Bearer $userToken',
-    };
-    final body = jsonEncode({
-      'selected_filiere': selectedFiliere,
-    });
-    print('response :$body');
-    try {
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: body,
-      );
-      //print('URL de la requête : $url');
-      //print('Headers : $headers');
-      //print('Corps de la requête : $body');
-      print('Code de statut de la réponse : ${response.statusCode}');
-      //print('Réponse du serveur : ${response.body}');
-      //final responseData = json.decode(response.body);
-      //print('Réponse : $responseData');
+    if (selectedFiliere != null) {
+      final url = Uri.parse('http://127.0.0.1:8000/api/choisir-filiere');
+      final headers = {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $userToken',
+      };
+      final body = ({
+        'selected_filiere': selectedFiliere,
+      });
+      try {
+        final response = await http.post(
+          url,
+          headers: headers,
+          body: body,
+        );
       if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        print('Réponse : $responseData');
-        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Filière enregistrée avec succès.'),
@@ -90,7 +79,6 @@ class _FilierePageState extends State<FilierePage> {
         );
       }
     } catch (e) {
-      print('Erreur lors de la requête : $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur lors de la requête. Veuillez réessayer.'),
