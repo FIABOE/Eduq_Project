@@ -22,6 +22,7 @@ import 'package:education/screenAdmin/listeADD/ListMod.dart';
 import 'package:education/screen/omboard/onboarding_screen.dart';
 import 'package:education/screenAdmin/listeADD/ListCours.dart';
 import 'package:education/screen/Homepage/accueil_page.dart';
+import 'package:education/screen/Profil/avatar.dart';
 
 
 void main() {
@@ -44,6 +45,7 @@ class MyApp extends StatelessWidget {
         '/editPass': (context) => const EditPassPage(key: Key('editPass')),
         //'/IntroPage': (context) => const IntroPage(key: Key('IntroPage')),
         '/FilierePage': (context) => const FilierePage(key: Key('FilierePage')),
+//'/AvatarPage': (context) => const AvatarPage(key: Key('AvatarPage')),
         '/ObjectifPage': (context) => const ObjectifPage(key: Key('ObjectifPage')),
         '/ListFiliere': (context) => const ListFiliere(key: Key('ListFiliere')),
         '/AccueilPage': (context) => const AccueilPage(key: Key('AccueilPage')),
@@ -58,6 +60,11 @@ class MyApp extends StatelessWidget {
         '/ListCours': (context) => ListCours(),
         '/ListQuiz': (context) => ListQuiz(),
         '/ListMod': (context) => ListMod(),
+        '/AvatarPage': (context) => AvatarPage(
+          onAvatarSelected: (String imagePath) {
+            // Ajoutez ici le code à exécuter lorsque l'avatar est sélectionné
+          },
+        ),
       },
     );
   }

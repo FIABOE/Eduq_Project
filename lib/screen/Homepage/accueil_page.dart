@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../Compte/compte_page.dart';
 import 'package:education/screen/Quiz/revision_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:education/screen/Profil/avatar.dart';
 
 class AccueilPage extends StatefulWidget {
   const AccueilPage({Key? key}) : super(key: key);
@@ -11,7 +12,7 @@ class AccueilPage extends StatefulWidget {
 }
 
 class _AccueilPageState extends State<AccueilPage> {
-  String userName = '';
+  //String userName = '';
   int _selectedIndex = 0; 
   String pseudo = '';
   bool avatarSelected = false;
@@ -23,17 +24,14 @@ class _AccueilPageState extends State<AccueilPage> {
   Icons.label,
 ];
 
-  void _loadUserName() async {
-    final prefs = await SharedPreferences.getInstance();
+  // Fonction de rappel pour la sélection d'avatar
+  void handleAvatarSelected(String selectedAvatar) {
+    // Traitez ici l'avatar sélectionné, par exemple, mettez à jour l'avatar de l'utilisateur
     setState(() {
-      userName = prefs.getString('userName') ?? '';
+      // Mettez à jour l'avatar avec selectedAvatar
     });
   }
   
-  
-
-
-
   @override
   void initState() {
     super.initState();
@@ -83,8 +81,15 @@ class _AccueilPageState extends State<AccueilPage> {
                     color: Colors.orange,
                   ),
                   onPressed: () async {
-                    // Naviguer vers la page de sélection d'avatar
-                    // ...
+                    // Naviguer vers la page AvatarPage et passer la fonction de rappel
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AvatarPage(
+                          onAvatarSelected: handleAvatarSelected,
+                        ),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -156,7 +161,7 @@ class _AccueilPageState extends State<AccueilPage> {
     },
   );
     });
-    _loadUserName();
+    
   }
 
   @override
@@ -215,7 +220,7 @@ class _AccueilPageState extends State<AccueilPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Bienvenue $userName',
+                          'Bienvenue',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,

@@ -1,8 +1,10 @@
 // ignore_for_file: library_private_types_in_public_api
 import 'package:flutter/material.dart';
-
 import '../Homepage/accueil_page.dart';
 import '../omboard/onboarding_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MesinfoPage extends StatefulWidget {
   const MesinfoPage({Key? key}) : super(key: key);
@@ -12,16 +14,62 @@ class MesinfoPage extends StatefulWidget {
 }
 
 class _MesinfoPageState extends State<MesinfoPage> {
-  List<InfoItem> userInfos = [
-    InfoItem(label: 'Prénom', value: 'irene', color:  const Color(0xFF087B95)),
-    
-    InfoItem(label: 'Nom', value: 'fiaboe', color:  const Color(0xFF087B95)),
-    InfoItem(label: 'Email', value: 'irend@example.com', color: Colors.blue),
-    InfoItem(label: 'Date de naissance', value: '01/01/1990', color: Colors.blue),
-    InfoItem(label: 'filière', value: 'Génie logiciel', color: Colors.blue),
-    InfoItem(label: 'Objectif', value: ' je révise 30min ', color: Colors.blue),
-  ];
+  Map<String, dynamic> userData = {}; 
+  String? userToken;
 
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
+
+  Future<void> fetchUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    userToken = prefs.getString('userToken'); 
+    
+    final response = await http.get(
+      Uri.parse('http://127.0.0.1:8000/api/user'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $userToken',
+      },
+    );
+    
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      setState(() {
+        userData = data['user']; 
+      });
+    }else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text(
+              'Erreur de chargement des données',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            content: const Text(
+              'Une erreur s\'est produite lors du chargement des données de l\'utilisateur.',
+              style: TextStyle(fontSize: 18),
+            ),
+            backgroundColor: Color(0xFFF5804E), 
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text(
+                  'Fermer',
+                  style: TextStyle(color: Colors.black, fontSize: 18),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
   void showLogoutConfirmationDialog() {
   showDialog(
     context: context,
@@ -42,6 +90,11 @@ class _MesinfoPageState extends State<MesinfoPage> {
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
+                  //Navigator.pushAndRemoveUntil(
+                    //context,
+                    //MaterialPageRoute(builder: (context) => const ObjectifPage()),
+                    //(Route<dynamic> route) => false,
+                  //);
                 },
                 child: const Text(
                   'Annuler',
@@ -83,9 +136,6 @@ class _MesinfoPageState extends State<MesinfoPage> {
   );
 }
 
-
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -122,14 +172,14 @@ class _MesinfoPageState extends State<MesinfoPage> {
           ),
         ),
       ),
-      body: Padding(
+       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 10),
             const Text(
-              'Veuillez vérifier vos informations \net les mettre à jour si nécessaire:',
+              'Veuillez vérifier vos informations',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -140,8 +190,10 @@ class _MesinfoPageState extends State<MesinfoPage> {
             const SizedBox(height: 32),
             Expanded(
               child: ListView.builder(
-                itemCount: userInfos.length,
+                itemCount: userData.length,
                 itemBuilder: (context, index) {
+                  final label = userData.keys.elementAt(index);
+                  final value = userData[label];
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: Row(
@@ -149,7 +201,7 @@ class _MesinfoPageState extends State<MesinfoPage> {
                         Expanded(
                           flex: 2,
                           child: Text(
-                            userInfos[index].label,
+                            label,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
@@ -160,9 +212,9 @@ class _MesinfoPageState extends State<MesinfoPage> {
                           child: Align(
                             alignment: Alignment.centerRight,
                             child: Text(
-                              userInfos[index].value,
-                              style: TextStyle(
-                                color: userInfos[index].color,
+                              value.toString(),
+                              style: const TextStyle(
+                                color: Colors.blue,
                               ),
                             ),
                           ),
@@ -175,30 +227,29 @@ class _MesinfoPageState extends State<MesinfoPage> {
             ),
             ElevatedButton(
               onPressed: () {
-                 Navigator.push(
-                    context,
-                     MaterialPageRoute(builder: (context) => const AccueilPage()),
-                  );
-                  
+                Navigator.push(
+                  context,
+                    MaterialPageRoute(builder: (context) => const AccueilPage()),
+                );
               },
               style: ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xFF70A19F),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(10),
-      side: BorderSide(
-        color: Colors.black.withOpacity(0.2),
-        width: 1.0,
-      ),
-    ),
-    padding: const EdgeInsets.symmetric(vertical: 16), // Augmenter la hauteur du bouton
-  ),
-  child: const Text(
-    'Valider',
-    style: TextStyle(
-      fontSize: 20, // Augmenter la taille du texte
-      color: Colors.white, // Changer la couleur du texte en blanc
-    ),
-  ),
+                backgroundColor: const Color(0xFF70A19F),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: BorderSide(
+                    color: Colors.black.withOpacity(0.2),
+                    width: 1.0,
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16), // Augmenter la hauteur du bouton
+              ),
+              child: const Text(
+                'Valider',
+                style: TextStyle(
+                  fontSize: 20, // Augmenter la taille du texte
+                  color: Colors.white, // Changer la couleur du texte en blanc
+                ),
+              ),
             ),
           ],
         ),
@@ -252,10 +303,3 @@ class CrossPainter extends CustomPainter {
 }
 
 
-class InfoItem {
-  final String label;
-  final String value;
-  final Color color;
-
-  InfoItem({required this.label, required this.value, required this.color});
-}

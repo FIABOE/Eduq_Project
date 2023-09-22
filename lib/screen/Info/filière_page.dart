@@ -64,7 +64,15 @@ class _FilierePageState extends State<FilierePage> {
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Filière enregistrée avec succès.'),
+            content: Text(
+              'Filière enregistrée avec succès.',
+              style: TextStyle(
+                fontSize: 16, 
+                fontWeight: FontWeight.bold, 
+                color: Colors.white, 
+              ),
+            ),
+            backgroundColor: Color(0xFF70A19F)
           ),
         );
         Navigator.push(
@@ -74,14 +82,30 @@ class _FilierePageState extends State<FilierePage> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de l\'enregistrement de la filière.'),
+            content: Text(
+            'Erreur lors de l\'enregistrement de la filière.',
+            style: TextStyle(
+                fontSize: 16, 
+                fontWeight: FontWeight.bold, 
+                color: Colors.white, 
+              ),
+            ),
+            backgroundColor: Color(0xFFEE7E23)
           ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erreur lors de la requête. Veuillez réessayer.'),
+          content: Text(
+            'Erreur lors de la requête. Veuillez réessayer.',
+            style: TextStyle(
+              fontSize: 16, 
+              fontWeight: FontWeight.bold, 
+              color: Colors.white, 
+            ),
+          ),
+          backgroundColor: Color(0xFFEE592C)
         ),
       );
     }
