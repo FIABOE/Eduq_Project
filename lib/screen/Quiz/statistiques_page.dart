@@ -65,7 +65,6 @@ class _StaPageState extends State<StaPage> {
                     color: Color.fromARGB(255, 161, 62, 23),
                   ),
                 ),
-
                 Container(
                   width: 40,
                   height: 40,

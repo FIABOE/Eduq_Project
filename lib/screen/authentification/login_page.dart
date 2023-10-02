@@ -23,7 +23,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscureText = true;
   bool _isFormValid = false;
   late String userName; 
-
+  String? userToken;
 
   void _updateFormValidity() {
     setState(() {
@@ -233,16 +233,16 @@ class _LoginPageState extends State<LoginPage> {
         body: formData,
       );
       
-      if (response.statusCode == 200) {
+     if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-
-        if (responseData.containsKey('access_token')) {
-          final userToken = responseData['access_token'];
+        //print('reponse : $responseData');
+        final userToken = responseData['data']['token'];
+        //print('Token d\'authentification sauvegardé : $userToken');
+        
+        if (userToken != null && userToken.isNotEmpty) {
           final prefs = await SharedPreferences.getInstance();
           prefs.setString('userToken', userToken);
-        } //else {
-        // Gérer le cas où 'access_token' n'existe pas dans la réponse
-      //}//
+        }
         if (responseData.containsKey('data')) {
           final user = User.fromJson(responseData['data']);
           final prefs = await SharedPreferences.getInstance();

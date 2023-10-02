@@ -61,7 +61,7 @@ class _ObjectifPageState extends State<ObjectifPage> {
   Future<void> _getUserToken() async {
     final prefs = await SharedPreferences.getInstance();
     userToken = prefs.getString('userToken');
-    print('Token d\'authentification récupéré depuis les préférences : $userToken');
+    //print('Token d\'authentification récupéré depuis les préférences : $userToken');
   }
 
   Future<void> _saveObjectif(String selectedObjectif) async {

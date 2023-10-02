@@ -1,40 +1,122 @@
-Le message "Token d'authentification :" suivi d'une chaîne vide indique que le token d'authentification 
-n'est pas correctement récupéré depuis les préférences de l'application. Pour résoudre ce problème, 
-vous devez vous assurer que le token est correctement stocké dans les préférences de l'application lorsque 
-l'utilisateur se connecte ou s'inscrit.
+Pour afficher la filière choisie par l'utilisateur à partir des 
+informations stockées dans la base de données, vous devez d'abord 
+récupérer ces informations, généralement à partir d'une requête à 
+la base de données, puis les utiliser pour mettre à jour le texte 
+affiché dans votre interface Flutter. 
+Voici comment vous pourriez faire cela :
 
-Voici quelques étapes à suivre pour résoudre ce problème :
+Assurez-vous d'avoir accès aux données de la filière choisie par l'utilisateur depuis votre base de données. Vous pouvez utiliser un système de gestion de l'état, tel que Provider ou Bloc, pour gérer ces données.
 
-Assurez-vous que le token d'authentification est correctement stocké dans les préférences 
-de l'application après l'authentification de l'utilisateur. Cela devrait se faire dans 
-la partie de votre code qui gère l'authentification. Voici un exemple de code pour
-stocker le token :
+Remplacez le texte statique 'filiere' par la valeur dynamique récupérée depuis la base de données. Pour cela, vous pouvez utiliser un StatefulWidget ou un StatelessWidget avec un gestionnaire d'état.
+
+Voici un exemple simplifié en utilisant un StatelessWidget avec un gestionnaire d'état :
+
 dart
 Copy code
-// Après avoir obtenu le token lors de l'authentification
-final prefs = await SharedPreferences.getInstance();
-prefs.setString('userToken', userToken); // Stockez le token avec la clé appropriée
-Assurez-vous que le code pour récupérer le token depuis les préférences est correctement placé dans la fonction _getUserToken() de votre code. Vous avez déjà le bon code pour cela :
-dart
-Copy code
-// Fonction pour obtenir le token d'authentification depuis les préférences de l'application
-Future<void> _getUserToken() async {
-  final prefs = await SharedPreferences.getInstance();
-  userToken = prefs.getString('userToken') ?? ''; // Assurez-vous de gérer le cas où le token n'est pas trouvé
-  print('Token d\'authentification : $userToken'); // Vérifiez la valeur du token
+import 'package:flutter/material.dart';
+
+class MyWidget extends StatefulWidget {
+  @override
+  _MyWidgetState createState() => _MyWidgetState();
 }
-Assurez-vous d'appeler la fonction _getUserToken() 
-dans la méthode initState() de votre widget pour obtenir 
-le token lors de l'initialisation de la page. Vous l'avez déjà fait correctement dans votre code.
 
-Vérifiez que le token est correctement stocké avec la clé 'userToken' 
-dans les préférences de l'application. Vous pouvez le vérifier en 
-accédant aux préférences de votre application 
-'(par exemple, en utilisant l\'extension "Flutter DevTools" dans votre navigateur).
+class _MyWidgetState extends State<MyWidget> {
+  String selectedFiliere = ''; // Initialisez la filière sélectionnée avec une valeur vide
 
-Assurez-vous que l'utilisateur est correctement authentifié avant d'essayer d'accéder à la page FilierePage. Vous pouvez utiliser des gardiens d'authentification pour cela, comme mentionné précédemment.
+  // Fonction pour récupérer la filière depuis la base de données
+  Future<void> fetchFiliereFromDatabase() async {
+    // Effectuez une requête à la base de données pour obtenir la filière choisie par l'utilisateur
+    // Mettez à jour la valeur de selectedFiliere avec la valeur récupérée depuis la base de données
+    selectedFiliere = await fetchFiliere(); // Remplacez fetchFiliere() par votre logique de récupération de données
+    setState(() {}); // Mettez à jour l'interface utilisateur pour refléter la nouvelle valeur
+  }
 
-Après avoir suivi ces étapes, assurez-vous que le token d'authentification est correctement stocké et récupéré depuis les préférences de l'application. Cela devrait résoudre le problème du message "L'utilisateur n'est pas authentifié" lorsque vous effectuez la requête HTTP. Si le problème persiste, assurez-vous que l'authentification de l'utilisateur est correcte et que le token est bien obtenu lors de la connexion ou de l'inscription.
+  @override
+  void initState() {
+    super.initState();
+    fetchFiliereFromDatabase(); // Appelez la fonction pour récupérer la filière lors de la création du widget
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 4.0),
+      child: Card(
+        elevation: 3,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        color: const Color(0xFFECEFF1),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Mon parcours',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AddbiblioPage()),
+                      );
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color.fromARGB(255, 219, 156, 96),
+                      ),
+                      child: const Icon(
+                        Icons.settings,
+                        color: Color.fromARGB(255, 252, 251, 251),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16.0),
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                color: Colors.white, // Modifier la couleur de la sous-carte si nécessaire
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        selectedFiliere, // Utilisez la valeur récupérée depuis la base de données
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16.0),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+Dans cet exemple, fetchFiliere() représente la fonction que vous devrez implémenter pour récupérer la filière depuis la base de données. Lorsque vous avez la filière, utilisez setState pour mettre à jour l'interface utilisateur avec la valeur récupérée. Cela garantit que la filière sélectionnée par l'utilisateur est correctement affichée.
 
 
 

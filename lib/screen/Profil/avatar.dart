@@ -1,13 +1,10 @@
-// ignore_for_file: file_names, library_private_types_in_public_api
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:http/http.dart' as http;
 
 class AvatarPage extends StatefulWidget {
-  final Function(String) onAvatarSelected; // Fonction de rappel pour la sélection d'avatar
-
-  AvatarPage({required this.onAvatarSelected});
+  const AvatarPage({Key? key}) : super(key: key);
 
   @override
   _AvatarPageState createState() => _AvatarPageState();
@@ -115,14 +112,20 @@ class _AvatarPageState extends State<AvatarPage> {
         //'assets/images/.png',
       ],
     },
-   
   ];
 
-  void handleAvatarSelected(String imagePath) {
-  widget.onAvatarSelected(imagePath);
-  Navigator.pop(context); // Fermez la page d'avatar après la sélection
-}
+  Future<void> saveAvatarPath(String avatarPath) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('avatarPath', avatarPath);
 
+    // Ajoutez un print pour vérifier la valeur sauvegardée
+    ///print('Chemin de l\'avatar sauvegardé : $avatarPath');
+  }
+
+  void _selectAvatar(String avatarPath) {
+    saveAvatarPath(avatarPath);
+    Navigator.pop(context, avatarPath);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -181,7 +184,8 @@ class _AvatarPageState extends State<AvatarPage> {
                   final imagePath = avatar[index]['images'][avatarIndex];
                   return GestureDetector(
                     onTap: () {
-                      handleAvatarSelected(imagePath);
+                      _selectAvatar(imagePath);
+                      print('Avatar sélectionné: $imagePath'); // Ajout du print
                     },
                     child: Image.asset(
                       imagePath ?? '',

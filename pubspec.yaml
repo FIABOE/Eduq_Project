@@ -36,6 +36,7 @@ dependencies:
   file_picker: ^5.5.0
   dropdown_search: ^5.0.6
   image_picker: ^1.0.4
+  path_provider: ^2.1.1   
   
 
 
@@ -43,12 +44,13 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   charts_flutter: ^0.12.0
-  #firebase_core: ^2.14.0
+  #firebase_core: ^2.14.0 
   #cloud_firestore: ^4.8.2
   #firebase_storage: ^11.2.5
   #firebase_auth: ^4.6.3
   provider: ^6.0.5
   flutter_admin: ^0.1.0-dev.1
+  appinio_social_share: ^0.2.6
   cached_network_image: ^3.2.3
   #image_picker: ^1.0.1
   country_list_pick: ^1.0.1+6

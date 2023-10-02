@@ -1,5 +1,8 @@
 import 'package:education/screen/Compte/Avatar_page.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 
 class UpdateComptePage extends StatefulWidget {
@@ -21,15 +24,13 @@ class _UpdateComptePageState extends State<UpdateComptePage> {
   String nom = '';
   String email = '';
   String pseudo = '';
-  String avatarPath = ''; // Remplacez ceci par le vrai chemin de l'avatar choisi
+  String avatarPath = ''; 
 
   @override
   void initState() {
     super.initState();
     
   }
-
-  
 
   @override
   Widget build(BuildContext context) {

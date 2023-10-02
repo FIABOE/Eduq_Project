@@ -1,13 +1,16 @@
 // ignore_for_file: library_private_types_in_public_api, unnecessary_const
 
 import 'package:flutter/material.dart';
-
 import '../Compte/compte_page.dart';
 import '../Homepage/accueil_page.dart';
 import 'add_biblio.dart';
 import 'search_page.dart';
 import 'temps_page.dart';
 import 'statistiques_page.dart';
+import 'package:education/screen/Quiz/Contenu/architecture.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RevisionPage extends StatefulWidget {
   const RevisionPage({Key? key}) : super(key: key);
@@ -18,6 +21,98 @@ class RevisionPage extends StatefulWidget {
 
 class _RevisionPageState extends State<RevisionPage> {
   int _selectedIndex = 1;
+  Map<String, dynamic> userData = {}; 
+  String? userToken;
+  
+  //Pour récupérer la filliere choisit
+  Widget buildFiliereWidget() {
+    if (userData['Filiere'] != null) {
+      return Text(
+        userData['Filiere'],
+        style: const TextStyle(
+          color: Colors.red,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      );
+    } else {
+    //Message d'erreur si la filière est nulle.
+      return Text(
+        '',
+        style: const TextStyle(
+          color: Colors.red,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
+
+  Future<void> fetchUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    userToken = prefs.getString('userToken'); 
+    
+    //print('authentification: $userToken');
+    
+    final response = await http.get(
+      Uri.parse('http://127.0.0.1:8000/api/user'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $userToken',
+      },
+    );
+    
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final user = data['user'];
+      print('utilisateur: $user');
+      
+      if (user.containsKey('Filiere')) {
+        setState(() {
+          userData = {
+            'Filiere': user['Filiere'],
+          };
+          print('Filiere récupérée avec succès : ${userData['Filiere']}');
+        });
+      } else {
+        print("La clé 'Filiere' n'est pas présente dans les données de l'utilisateur.");
+      }
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text(
+              'Erreur de chargement des données',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            content: const Text(
+              'Une erreur s\'est produite lors du chargement des données de l\'utilisateur.',
+              style: TextStyle(fontSize: 18),
+            ),
+            backgroundColor: Color(0xFFF5804E), 
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text(
+                  'Fermer',
+                  style: TextStyle(color: Colors.black, fontSize: 18),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -245,46 +340,46 @@ class _RevisionPageState extends State<RevisionPage> {
               ),
             ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 4.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: Card(
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  color: const Color.fromARGB(255, 251, 252, 251), // Couleur de fond de la carte
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 6.0, horizontal: 10.0), 
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [      
-                           CircleAvatar(
-                              backgroundImage: AssetImage('assets/images/ve.png',
-                              ),
-                              radius: 20, // La moitié de la largeur/hauteur souhaitée
-                            ),
-                            SizedBox(width: 8.0),
-                            Text(
-                              'S\'entrainer sur tous les matières',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: Color.fromARGB(255, 216, 19, 5),
-                              ),
-                            ),
-                          ],
-                        ),
+            //Padding(
+              //padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 4.0),
+              //child: SizedBox(
+                //width: double.infinity,
+                //child: Card(
+                  //elevation: 3,
+                  //shape: RoundedRectangleBorder(
+                    //borderRadius: BorderRadius.circular(10),
+                  //),
+                  //color: const Color.fromARGB(255, 251, 252, 251), // Couleur de fond de la carte
+                  //child: const Padding(
+                    //padding: EdgeInsets.symmetric(vertical: 6.0, horizontal: 10.0), 
+                    //child: Column(
+                      //crossAxisAlignment: CrossAxisAlignment.start,
+                      //children: [
+                        //Row(
+                          //children: [      
+                           //CircleAvatar(
+                              //backgroundImage: AssetImage('assets/images/ve.png',
+                              //),
+                              //radius: 20, // La moitié de la largeur/hauteur souhaitée
+                            //),
+                            //SizedBox(width: 8.0),
+                            //Text(
+                              //'S\'entrainer sur tous les matières',
+                              //style: TextStyle(
+                                //fontWeight: FontWeight.bold,
+                                //fontSize: 18,
+                                //color: Color.fromARGB(255, 216, 19, 5),
+                              //),
+                            //),
+                          //],
+                        //),
                         // Autres widgets de statistiques par matière
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+                      //],
+                    //),
+                  //),
+                //),
+              //),
+            //),
             Padding(
               padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 4.0),
               child: SizedBox(
@@ -416,7 +511,7 @@ class _RevisionPageState extends State<RevisionPage> {
                             ),
                             const SizedBox(width: 8.0),
                             const Text(
-                              'Mes statistiques par matière',
+                              'Mes statistiques',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
@@ -435,127 +530,79 @@ class _RevisionPageState extends State<RevisionPage> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 4.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: Stack(
-                  children: [
-                    Card(
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      color: const Color(0xFFECEFF1), // Couleur de fond de la carte
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Mes parcours',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => Architecture()), // Remplacez ArchitecturePage par le nom de votre page
+                  );
+                },
+              child: Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                color: const Color(0xFFECEFF1),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Mon parcours',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const AddbiblioPage()),
+                              );
+                            },
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color.fromARGB(255, 219, 156, 96),
+                              ),
+                              child: const Icon(
+                                Icons.settings,
+                                color: Color.fromARGB(255, 252, 251, 251),
                               ),
                             ),
-                            const SizedBox(height: 16.0),
-                            ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: 3, // Modifier le nombre de cartes ici (3 ou 4)
-                              itemBuilder: (BuildContext context, int index) {
-                                return Card(
-                                  elevation: 3,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  color: Colors.white, // Modifier la couleur de la carte si nécessaire
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Text(
-                                      'M${index + 1}', // Texte de la carte (M1, M2, ...)
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 16.0),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Color.fromARGB(255, 219, 156, 96),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.settings,
-                            color: Color.fromARGB(255, 252, 251, 251),
                           ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const AddbiblioPage()),
-                            );
-                              // Action à effectuer lorsque l'icône de paramètres est pressée
-                          },
+                        ],
+                      ),
+                      const SizedBox(height: 16.0),
+                      Card(
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        color: Colors.white, // Modifier la couleur de la sous-carte si nécessaire
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              buildFiliereWidget(), // Utilisation de la fonction pour afficher la filière
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16.0),
+                    ],
+                  ),
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  
-                  const SizedBox(height: 16.0),
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    childAspectRatio: 1.3,
-                    children: const [
-                      ExerciseCard(
-                        icon: Icons.watch,
-                        color: Colors.blue,
-                        title: 'Exercice 1',
-                      ),
-                      ExerciseCard(
-                        icon: Icons.directions_run,
-                        color: Colors.green,
-                        title: 'Exercice 2',
-                      ),
-                      ExerciseCard(
-                        icon: Icons.fitness_center,
-                        color: Colors.orange,
-                        title: 'Exercice 3',
-                      ),
-                      ExerciseCard(
-                        icon: Icons.accessibility,
-                        color: Colors.red,
-                        title: 'Exercice 4',
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(
-              height: MediaQuery.of(context).size.height - 460,
-              child: Container(),
             ),
           ],
         ),

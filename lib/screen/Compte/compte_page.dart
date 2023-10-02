@@ -22,7 +22,6 @@ class _ComptePageState extends State<ComptePage> {
   @override
   void initState() {
     super.initState();
-    
   }
   
     
@@ -239,18 +238,18 @@ class _ComptePageState extends State<ComptePage> {
                 title: 'Mes cours favoris',
                 color: Colors.red,
               ),
-              MenuItem(
-                icon: Icons.person,
-                title: 'Mon profil',
-                circleIcon: true,
-                color: Colors.blue,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const ProfilPage()),
-                  );
-                },
-              ),
+              //MenuItem(
+                //icon: Icons.person,
+                //title: 'Mon profil',
+                //circleIcon: true,
+                //color: Colors.blue,
+                //onTap: () {
+                  //Navigator.push(
+                   // context,
+                    //MaterialPageRoute(builder: (context) => const ProfilPage()),
+                  //);
+                //},
+              //),
               const MenuItem(
                 icon: Icons.settings,
                 title: 'Paramètres',

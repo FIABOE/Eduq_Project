@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:education/models/user.dart';
 import 'package:education/models/moderateur.dart';
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ListMod extends StatefulWidget {
   const ListMod({Key? key}) : super(key: key);
@@ -15,11 +16,19 @@ class ListMod extends StatefulWidget {
 class _ListModState extends State<ListMod> {
   List<Moderateur> moderateurs = [];
   List<bool> isCheckedList = [];
+   String? userToken;
 
   @override
   void initState() {
     super.initState();
     fetchModerateurs();
+    _getUserToken();
+  }
+
+  Future<void> _getUserToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    userToken = prefs.getString('userToken');
+    //print('Token d\'authentification récupéré depuis les préférences : $userToken');
   }
 
   Future<void> fetchModerateurs() async {
@@ -28,24 +37,38 @@ class _ListModState extends State<ListMod> {
         Uri.parse('http://127.0.0.1:8000/api/moderators'),
         headers: {
           'Accept': 'application/json',
+          'Authorization': 'Bearer $userToken',
         },
       );
+      
+      //print('Response status code: ${response.statusCode}');
+      //print('Response body: ${response.body}');
+
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         final Map<String, dynamic> data = json.decode(response.body);
-        
+
         if (data.containsKey('success') && data['success'] == true) {
           final List<dynamic> moderateursData = data['moderators'];
-          final List<Moderateur> fetchedModerateurs = moderateursData
-          .map((item) => Moderateur(id: item['id'], name: item['name'].toString()))
-          .toList();
-          
+          final List<Moderateur> fetchedModerateurs = moderateursData.map((item) {
+            final id = item['id'];
+
+            if (id is int) {
+              return Moderateur(id: id, name: item['Nom'].toString());
+            } else if (id is String) {
+              return Moderateur(id: int.tryParse(id) ?? 0, name: item['Nom'].toString());
+            } else {
+            // Gérer le cas où id est null ou d'un type inattendu
+              return Moderateur(id: 0, name: item['Nom'].toString());
+            }
+          }).toList();
+
           setState(() {
             moderateurs.clear();
             moderateurs.addAll(fetchedModerateurs);
             isCheckedList = List.generate(moderateurs.length, (index) => false);
           });
         } else {
-          throw Exception('Failed to load Mod');
+        throw Exception('Failed to load Mod');
         }
       } else {
         throw Exception('Failed to load fMod');
@@ -125,7 +148,7 @@ class _ListModState extends State<ListMod> {
                   margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                   child: ListTile(
                     title: Text(
-                      moderateur.name, 
+                      moderateur.name,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

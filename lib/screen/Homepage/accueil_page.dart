@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../Compte/compte_page.dart';
 import 'package:education/screen/Quiz/revision_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:education/screen/Profil/avatar.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class AccueilPage extends StatefulWidget {
   const AccueilPage({Key? key}) : super(key: key);
@@ -12,158 +14,294 @@ class AccueilPage extends StatefulWidget {
 }
 
 class _AccueilPageState extends State<AccueilPage> {
-  //String userName = '';
+
   int _selectedIndex = 0; 
-  String pseudo = '';
-  bool avatarSelected = false;
-  double progression = 0.2; // Exemple de progression (0.0 à 1.0)
+  double progression = 0.2;
 
   List<IconData> badgeIcons = [
-  Icons.bookmark,
-  Icons.star,
-  Icons.label,
-];
+    Icons.bookmark,
+    Icons.star,
+    Icons.label,
+  ];
 
-  // Fonction de rappel pour la sélection d'avatar
-  void handleAvatarSelected(String selectedAvatar) {
-    // Traitez ici l'avatar sélectionné, par exemple, mettez à jour l'avatar de l'utilisateur
-    setState(() {
-      // Mettez à jour l'avatar avec selectedAvatar
-    });
+  String pseudo = ''; 
+  String avatarUrl = ''; 
+  String avatarFileName = '';
+  bool isListVisible = false;
+  List<String> objectifs = [];
+  String? selectedObjectif;
+  String? userToken;
+  Map<String, dynamic> userData = {};
+
+
+  //convertion des minutes
+  String _extractDuration(String objectif) {
+  String duree = objectif.replaceAll(RegExp(r'[^0-9h]+'), ''); // Supprime tous les caractères sauf les chiffres, 'h' et 'min'
+    duree = duree.replaceAll('h', ' h '); // Ajoute des espaces autour de 'h' pour faciliter la séparation
+    duree = duree.replaceAll('min', ' min '); // Ajoute des espaces autour de 'min' pour faciliter la séparation
+    return duree.trim(); // Supprime les espaces supplémentaires aux extrémités
   }
-  
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      TextEditingController _pseudoController = TextEditingController();
 
-      return AlertDialog(
-        title: const Center(
-          child: Text(
-            'Veuillez choisir votre pseudo et votre avatar',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+  //Récupération de la filiere
+  Future<void> fetchUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    userToken = prefs.getString('userToken'); 
+    //print('authentification: $userToken');
+    
+    final response = await http.get(
+      Uri.parse('http://127.0.0.1:8000/api/user'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $userToken',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final user = data['user'];
+      print('utilisateur: $user');
+      
+      if (user.containsKey('Objectif hebdomadaire')) {
+        setState(() {
+          userData = {
+            'Objectif hebdomadaire': user['Objectif hebdomadaire'],
+          };
+          print('Objectif hebdomadaire récupérée avec succès : ${userData['Objectif hebdomadaire']}');
+        });
+      } else {
+        print("La clé 'Objectif hebdomadaire' n'est pas présente dans les données de l'utilisateur.");
+      }
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text(
+              'Erreur de chargement des données',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
+            content: const Text(
+              'Une erreur s\'est produite lors du chargement des données de l\'utilisateur.',
+              style: TextStyle(fontSize: 18),
+            ),
+            backgroundColor: Color(0xFFF5804E), 
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text(
+                  'Fermer',
+                  style: TextStyle(color: Colors.black, fontSize: 18),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+   @override
+   void initState() {
+    super.initState();
+    fetchUserProfile();
+    fetchUserData();
+    fetchObjectifs();
+  }
+
+  
+//gestion pour afficher l'objectif
+Future<void> fetchObjectifs() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://127.0.0.1:8000/api/objectifs'),
+        headers: {
+          'Accept': 'application/json',
+        },
+      );
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        if (data.containsKey('data') && data['data'] is List<dynamic>) {
+          final List<dynamic> objectifsData = data['data'];
+          final List<String> fetchedObjectifs = objectifsData
+              .map((item) => item['libelle'].toString())
+              .toList();
+
+          setState(() {
+            objectifs.clear();
+            objectifs.addAll(fetchedObjectifs);
+          });
+        } else {
+          throw Exception('Failed to load objectifs');
+        }
+      } else {
+        throw Exception('Failed to load objectifs');
+      }
+    } catch (error) {
+      print('Error fetching objectifs: $error');
+    }
+  }
+
+  Future<void> _saveObjectif(String selectedObjectif) async {
+    final url = Uri.parse('http://127.0.0.1:8000/api/choisir-objectif'); 
+    final headers = {
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $userToken',
+    };
+    final body = {
+      'selected_objectif': selectedObjectif,
+    };
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(
+            content: Text(
+              'Objectif enregistré avec succès.',
+              style: TextStyle(
+                fontSize: 16, 
+                fontWeight: FontWeight.bold, 
+                color: Colors.white, 
+              ),
+            ),
+            backgroundColor: Color(0xFF70A19F), 
           ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
-                    color: Colors.grey,
-                    shape: BoxShape.circle,
-                  ),
-                  child: CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Color.fromARGB(255, 252, 252, 252),
-                    child: Icon(
-                      Icons.person,
-                      size: 24,
-                      color: Color.fromARGB(255, 248, 91, 91),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.edit,
-                    size: 24,
-                    color: Colors.orange,
-                  ),
-                  onPressed: () async {
-                    // Naviguer vers la page AvatarPage et passer la fonction de rappel
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AvatarPage(
-                          onAvatarSelected: handleAvatarSelected,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => AccueilPage()),
+        );  
+        } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Erreur lors de l\'enregistrement de l\'objectif',
+              style: TextStyle(
+                fontSize: 16, 
+                fontWeight: FontWeight.bold, 
+                color: Colors.white, 
+              ),   
             ),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: Colors.grey[200],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Pseudo: ', // Afficher le pseudo de l'utilisateur
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _pseudoController,
-                      style: const TextStyle(
-                        color: Color.fromARGB(255, 143, 69, 9),
-                        fontSize: 18,
-                      ),
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                        hintText: 'Modifier votre pseudo',
-                        hintStyle: TextStyle(
-                          color: Colors.grey,
-                        ),
-                      ),
-                      onChanged: (value) {
-                        // Mettre à jour le pseudo lorsque l'utilisateur tape un nouveau pseudo
-                        // ...
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              child: const Text(
-                'Valider',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF70A19F),
-              ),
-              onPressed: () {
-                // Enregistrer les informations
-                // ...
-              },
-            ),
-          ],
+            backgroundColor: Color(0xFFF5804E), 
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Erreur lors de la requête. Veuillez réessayer.',
+            style: TextStyle(
+              fontSize: 16, 
+              fontWeight: FontWeight.bold, 
+              color: Colors.white, 
+            ), 
+          ),
+          backgroundColor: Color(0xFFFC6161), 
         ),
       );
-    },
-  );
-    });
-    
+    }
+  }
+  
+  Widget buildObjectifTile(String objectif) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 16), // Ajustez les marges
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8), // Ajustez le rayon de la bordure
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: ListTile(
+        title: Text(
+          objectif,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.black, // Couleur du texte
+          ),
+        ),
+        tileColor: Colors.transparent, // Couleur de fond transparente
+        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 16), // Ajustez le padding
+        onTap: () {
+          setState(() {
+            selectedObjectif = objectif;
+          });
+          _saveObjectif(selectedObjectif!);
+        },
+        trailing: Icon(
+          Icons.check, // Icône de sélection (vous pouvez changer cela)
+          color: Colors.green, // Couleur de l'icône de sélection
+        ),
+      ),
+    );
   }
 
+  //fonction qui traite le profil du user
+  Future<void> fetchUserProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    userToken = prefs.getString('userToken'); 
+    print('authentification: $userToken');
+    try {
+    print('Début de la requête HTTP');
+    final response = await http.get(
+      Uri.parse('http://127.0.0.1:8000/api/user/profile'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $userToken',
+      },
+    );
+
+    print('Réponse HTTP reçue');
+
+    if (response.statusCode == 200 && response.body.isNotEmpty) {
+      final Map<String, dynamic> data = json.decode(response.body);
+
+      if (data.containsKey('success') && data['success'] == true) {
+        // Récupérez le pseudo et l'URL de l'avatar depuis les données du profil
+        final String userPseudo = data['pseudo'];
+        final String userAvatarUrl = data['avatar'];
+
+        print('Pseudo récupéré : $userPseudo');
+        print('URL de l\'avatar récupéré : $userAvatarUrl');
+
+        setState(() {
+          pseudo = userPseudo; // Mettez à jour le pseudo dans l'état local
+          avatarUrl = userAvatarUrl; // Mettez à jour l'URL de l'avatar dans l'état local
+          updateAvatarFileName(userAvatarUrl);
+        });
+
+        print('Mise à jour de l\'état local effectuée');
+      }
+    }
+  } catch (error) {
+    print('Erreur lors de la récupération du profil utilisateur : $error');
+  }
+}
+
+ // Fonction pour extraire le nom du fichier d'avatar de l'URL
+  void updateAvatarFileName(String url) {
+    final List<String> urlSegments = url.split('/');
+    avatarFileName = urlSegments.isNotEmpty ? urlSegments.last : '';
+  }
+
+  // Fonction pour construire le chemin complet vers l'image d'avatar
+  String buildAvatarImagePath() {
+    return 'assets/images/$avatarFileName';
+  }
+
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -180,22 +318,17 @@ class _AccueilPageState extends State<AccueilPage> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const CircleAvatar(
-              backgroundColor: Colors.white,
-              radius: 24, // Rayon du cercle
-              child: Icon(
-                Icons.person,
-                color: Color.fromARGB(255, 235, 232, 232),
-                size: 24, // Taille de l'icône
-              ),
-            ),
-            onPressed: () {
+          GestureDetector(
+            onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ComptePage()),
+                MaterialPageRoute(builder: (context) => ComptePage()),
               );
             },
+            child: CircleAvatar(
+              radius: 24,
+              backgroundImage: AssetImage(buildAvatarImagePath()),
+            ),
           ),
         ],
       ),
@@ -220,7 +353,7 @@ class _AccueilPageState extends State<AccueilPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Bienvenue',
+                          'Bienvenue $pseudo',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,
@@ -241,7 +374,6 @@ class _AccueilPageState extends State<AccueilPage> {
                           children: [
                            ElevatedButton(
                             onPressed: () {
-
                             },
                             child: const Text(
                               'Me tester',
@@ -295,18 +427,21 @@ class _AccueilPageState extends State<AccueilPage> {
                                     fontSize: 18,
                                   ),
                                 ),
-                                CircleAvatar(
+                               CircleAvatar(
                                   backgroundColor: Colors.orange,
                                   child: IconButton(
                                     icon: const Icon(
                                       Icons.edit,
                                       color: Colors.white,
-                                      size: 16, 
+                                      size: 16,
                                     ),
-                                    onPressed: () { 
-                                  },
+                                    onPressed: () {
+                                      setState(() {
+                                        isListVisible = !isListVisible;
+                                      });
+                                    },
                                   ),
-                                ),
+                               ),
                               ],
                             ),
                             const SizedBox(height: 10),
@@ -340,7 +475,20 @@ class _AccueilPageState extends State<AccueilPage> {
                               ],
                             ),
                             const SizedBox(height: 10),
-                            const Row(
+                            AnimatedContainer(
+                              duration: Duration(milliseconds: 500),
+                              height: isListVisible ? 200 : 0,
+                              child: isListVisible
+                              ? ListView.builder(
+                                itemCount: objectifs.length,
+                                itemBuilder: (context, index) {
+                                  return buildObjectifTile(objectifs[index]);
+                                },
+                              )
+                            : null,
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
@@ -351,7 +499,9 @@ class _AccueilPageState extends State<AccueilPage> {
                                   ),
                                 ),
                                 Text(
-                                  '30 min',
+                                  userData['Objectif hebdomadaire'] != null
+                                  ? '${_extractDuration(userData['Objectif hebdomadaire'])} min'
+                                  : '',
                                   style: TextStyle(
                                     color: Color.fromARGB(255, 248, 232, 5),
                                     fontWeight: FontWeight.bold,

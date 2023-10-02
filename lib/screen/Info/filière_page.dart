@@ -29,7 +29,7 @@ class _FilierePageState extends State<FilierePage> {
   Future<void> _getUserToken() async {
     final prefs = await SharedPreferences.getInstance();
     userToken = prefs.getString('userToken');
-    print('Token d\'authentification récupéré depuis les préférences : $userToken');
+    //print('Token d\'authentification récupéré depuis les préférences : $userToken');
   }
 
   void _navigateToListFilierePage() async {

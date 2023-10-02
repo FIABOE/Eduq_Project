@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../Homepage/accueil_page.dart';
 import '../omboard/onboarding_screen.dart';
+import 'package:education/screen/Profil/boite_profil.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,6 +27,7 @@ class _MesinfoPageState extends State<MesinfoPage> {
   Future<void> fetchUserData() async {
     final prefs = await SharedPreferences.getInstance();
     userToken = prefs.getString('userToken'); 
+    //print('authentification: $userToken');
     
     final response = await http.get(
       Uri.parse('http://127.0.0.1:8000/api/user'),
@@ -34,7 +36,6 @@ class _MesinfoPageState extends State<MesinfoPage> {
         'Authorization': 'Bearer $userToken',
       },
     );
-    
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
       setState(() {
@@ -229,7 +230,7 @@ class _MesinfoPageState extends State<MesinfoPage> {
               onPressed: () {
                 Navigator.push(
                   context,
-                    MaterialPageRoute(builder: (context) => const AccueilPage()),
+                    MaterialPageRoute(builder: (context) => const BoitePage()),
                 );
               },
               style: ElevatedButton.styleFrom(

@@ -1,14 +1,10 @@
 import 'package:education/screen/Info/list_filière.dart';
 import 'package:education/screenAdmin/listeADD/ListCours.dart';
-import 'package:education/screen/Info/list_filière.dart';
-import 'package:education/screenAdmin/listeADD/ListCours.dart';
-import 'package:education/screen/Info/list_filière.dart';
-import 'package:education/screenAdmin/listeADD/ListCours.dart';
-import 'package:education/screen/Info/list_filière.dart';
-import 'package:education/screenAdmin/listeADD/ListCours.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddCours extends StatefulWidget {
   const AddCours({Key? key}) : super(key: key);
@@ -19,11 +15,12 @@ class AddCours extends StatefulWidget {
 
 class _AddCoursState extends State<AddCours> {
   TextEditingController filiereController = TextEditingController();
-  PlatformFile? selectedFile; // Utilisez PlatformFile au lieu de File
+  File? selectedFile;
   String? selectedFiliere;
-
   bool isValiderButtonEnabled = false;
+  String? userToken;
 
+  // Pour naviguer vers la liste
   Future<void> navigateToFiliereSelection() async {
     final selectedFiliere = await Navigator.push<String?>(
       context,
@@ -31,92 +28,108 @@ class _AddCoursState extends State<AddCours> {
         builder: (context) => ListFiliere(selectedFiliere: this.selectedFiliere),
       ),
     );
-
     if (selectedFiliere != null) {
       setState(() {
-        this.selectedFiliere = selectedFiliere;   
+        this.selectedFiliere = selectedFiliere;
         isValiderButtonEnabled = true;
       });
     }
   }
 
+  // Récupération du token
+  Future<void> _getUserToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    userToken = prefs.getString('userToken');
+    //print('Token d\'authentification récupéré depuis les préférences : $userToken');
+  }
+
   Future<void> selectPDFFile() async {
     final result = await FilePicker.platform.pickFiles(
+      withData: true,
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );
-
     if (result != null && result.files.isNotEmpty) {
       setState(() {
-        selectedFile = result.files.first;
+        selectedFile = File(result.files.single.path!);
       });
     }
   }
 
   Future<void> submitForm() async {
-  if (selectedFile == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Veuillez sélectionner un fichier PDF.'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-  if (selectedFiliere == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Veuillez sélectionner une filière.'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
+    try {
+      if (selectedFile == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Veuillez sélectionner un fichier PDF.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      // Afficher les valeurs de selectedFiliere et selectedFile
+      //print('selectedFiliere: $selectedFiliere');
+      //print('selectedFile: $selectedFile');
 
-  final request = http.MultipartRequest(
-    'POST',
-    Uri.parse('http://127.0.0.1:8000/api/cours'),
-  );
-
-  request.fields['filiere_libelle'] = selectedFiliere!;
-
-    final pdfFile = http.MultipartFile(
-      'pdf_file',
-      selectedFile!.readStream!,
-      selectedFile!.size,
-      filename: selectedFile!.name,
-    );
-
-    request.files.add(pdfFile);
-
-    final response = await request.send();
-
-    if (response.statusCode == 201) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Cours ajouté avec succès.'),
-          backgroundColor: Colors.green,
-        ),
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('http://127.0.0.1:8000/api/cours'),
       );
-      setState(() {
-        selectedFile = null;
-        selectedFiliere = null;
-        isValiderButtonEnabled = false;
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Échec de l\'ajout du cours.'),
-          backgroundColor: Colors.red,
-        ),
+
+      // Ajouter l'en-tête Authorization avec le token de l'utilisateur
+      request.headers['Authorization'] = 'Bearer $userToken';
+      request.headers['Accept'] = 'application/json';
+
+      request.fields['filiere_libelle'] = selectedFiliere!;
+
+      final pdfFile = http.MultipartFile(
+        'pdf_file',
+        selectedFile!.readAsBytes().asStream(),
+        selectedFile!.lengthSync(),
+        filename: selectedFile!.path.split('/').last, // Obtenez le nom du fichier à partir du chemin
       );
+
+      request.files.add(pdfFile);
+
+      final response = await request.send();
+
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Cours ajouté avec succès.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        setState(() {
+          selectedFile = null;
+          selectedFiliere = null;
+          isValiderButtonEnabled = false;
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Échec de l\'ajout du cours.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Erreur lors de l\'exécution de la fonction submitForm : $e');
     }
   }
-  @override 
+
+  @override
+  void initState() {
+    super.initState();
+    _getUserToken();
+  }
+
+  @override
   void dispose() {
     filiereController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -177,20 +190,42 @@ class _AddCoursState extends State<AddCours> {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Icon(
                       Icons.file_upload,
                       color: Colors.white,
                       size: 24,
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 14),
                     Text(
-                      'Sélectionner un fichier',
+                      selectedFile != null
+                          ? '${selectedFile!.path.split('/').last}'
+                          : 'Sélectionnez votre fichier',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: 18,
+                      ),
+                    ),
+                    SizedBox(width: 22),
+                    // Condition pour afficher le bouton seulement si un fichier est sélectionné
+                    Visibility(
+                      visible: selectedFile != null,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            selectedFile = null;
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          primary: Colors.red,
+                        ),
+                        child: Icon(
+                          Icons.delete,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                     ),
                   ],
@@ -226,7 +261,9 @@ class _AddCoursState extends State<AddCours> {
                           selectedFiliere ?? 'Sélection',
                           style: TextStyle(
                             fontSize: 16,
-                            color: selectedFiliere != null ? const Color(0xFF087B95) : Colors.grey,
+                            color: selectedFiliere != null
+                                ? const Color(0xFF087B95)
+                                : Colors.grey,
                             fontWeight: FontWeight.w500,
                           ),
                         ),

@@ -23,7 +23,10 @@ import 'package:education/screen/omboard/onboarding_screen.dart';
 import 'package:education/screenAdmin/listeADD/ListCours.dart';
 import 'package:education/screen/Homepage/accueil_page.dart';
 import 'package:education/screen/Profil/avatar.dart';
-
+import 'package:education/screen/Info/mes_info.dart';
+import 'package:education/screen/Profil/boite_profil.dart';
+import 'package:education/screen/Quiz/Contenu/architecture.dart';
+//import 'package:education/screen/Quiz/quiz_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -45,26 +48,25 @@ class MyApp extends StatelessWidget {
         '/editPass': (context) => const EditPassPage(key: Key('editPass')),
         //'/IntroPage': (context) => const IntroPage(key: Key('IntroPage')),
         '/FilierePage': (context) => const FilierePage(key: Key('FilierePage')),
-//'/AvatarPage': (context) => const AvatarPage(key: Key('AvatarPage')),
+        '/AvatarPage': (context) => const AvatarPage(key: Key('AvatarPage')),
         '/ObjectifPage': (context) => const ObjectifPage(key: Key('ObjectifPage')),
         '/ListFiliere': (context) => const ListFiliere(key: Key('ListFiliere')),
+        '/BoitePage': (context) => const BoitePage(key: Key('BoitePage')),
         '/AccueilPage': (context) => const AccueilPage(key: Key('AccueilPage')),
         '/AccueilMod': (context) => const AccueilMod(key: Key('AccueilMod')),
         '/AdAccueilPage': (context) => const AdAccueilPage(key: Key('AdAccueilPage')),
         '/AddFiliere': (context) => const AddFiliere(key: Key('AddFiliere')),
+        '/MesinfoPage': (context) => const MesinfoPage(key: Key('MesinfoPage')),
         //'/ObjectifPage': (context) => const ObjectifPage(key: Key('ObjectifPage')),
+        '/Architecture': (context) => const Architecture(key: Key('Architecture')),
         '/AddQuiz': (context) => const AddQuiz(key: Key('AddQuiz')),
         '/AddCours': (context) => const AddCours(key: Key('AddCours')),
+        //'/QuizPage': (context) => const QuizPage(key: Key('QuizPage')),
         '/ListFill': (context) => const ListFill(key: Key('ListFill')),
         '/ListObjectif': (context) => ListObjectif(),
         '/ListCours': (context) => ListCours(),
         '/ListQuiz': (context) => ListQuiz(),
         '/ListMod': (context) => ListMod(),
-        '/AvatarPage': (context) => AvatarPage(
-          onAvatarSelected: (String imagePath) {
-            // Ajoutez ici le code à exécuter lorsque l'avatar est sélectionné
-          },
-        ),
       },
     );
   }

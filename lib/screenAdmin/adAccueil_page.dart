@@ -187,7 +187,7 @@ class _AdAccueilPageState extends State<AdAccueilPage> {
   }
   
   Future<void> registerModerateur() async {
-  final String apiUrl = 'http://127.0.0.1:8000/api/register-moderateur'; 
+  final String apiUrl = 'http://192.168.137.131:8000/api/register-moderateur'; 
 
   final Map<String, dynamic> formData = {
     'surname': nomController.text,
@@ -640,7 +640,7 @@ class MyDrawer extends StatelessWidget {
               color: const Color(0xFF70A19F), // Couleur de l'icône
             ),
             title: Text(
-              'Déconnexion',
+              'Se Déconnecter',
               style: drawerItemStyle, // Utilisation du style personnalisé
             ),
             onTap: () {
